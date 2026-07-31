@@ -1,0 +1,20 @@
+# --- Web framework ---
+fastapi>=0.115
+uvicorn[standard]>=0.30
+
+# --- Settings / env ---
+pydantic>=2.8
+pydantic-settings>=2.4
+
+# --- Database (sync) ---
+sqlalchemy>=2.0
+psycopg2-binary>=2.9   # sync PostgreSQL driver. Swap to `psycopg[binary]` (v3) later if you want.
+alembic>=1.13
+
+# --- Auth ---
+pyjwt>=2.9              # NOT python-jose. jose is unmaintained w/ known CVEs (see notes below).
+pwdlib[bcrypt]>=0.2
+
+# --- Dev / testing ---
+pytest>=8.0
+httpx2>=2.0              # starlette.testclient now prefers this; plain httpx is deprecated (unmaintained upstream)
