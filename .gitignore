@@ -1,0 +1,35 @@
+# ============================
+# Secrets — never commit these
+# ============================
+.env
+backend/.env
+frontend/.env
+frontend/.env.local
+
+# ============================
+# Python (backend)
+# ============================
+venv/
+backend/venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+*.egg-info/
+
+# ============================
+# Node / React (frontend)
+# ============================
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/.vite/
+
+# ============================
+# Editor / OS noise
+# ============================
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
