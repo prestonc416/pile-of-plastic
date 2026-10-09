@@ -1,20 +1,20 @@
 # --- Web framework ---
 fastapi>=0.115
 uvicorn[standard]>=0.30
-
+ 
 # --- Settings / env ---
-pydantic>=2.8
+pydantic[email]>=2.8    # [email] extra installs email-validator, needed for EmailStr
 pydantic-settings>=2.4
-
+ 
 # --- Database (sync) ---
 sqlalchemy>=2.0
 psycopg2-binary>=2.9   # sync PostgreSQL driver. Swap to `psycopg[binary]` (v3) later if you want.
 alembic>=1.13
-
+ 
 # --- Auth ---
 pyjwt>=2.9              # NOT python-jose. jose is unmaintained w/ known CVEs (see notes below).
 pwdlib[argon2]>=0.3      # argon2-cffi is what PasswordHash.recommended() actually needs
-
+ 
 # --- Dev / testing ---
 pytest>=8.0
 httpx2>=2.0              # starlette.testclient now prefers this; plain httpx is deprecated (unmaintained upstream)
