@@ -8,8 +8,10 @@ instead of silently breaking a request later.
 """
 
 from functools import lru_cache
+from typing import Annotated
 
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import field_validator
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -21,6 +23,13 @@ class Settings(BaseSettings):
     jwt_secret_key: str
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 60
+
+    # --- CORS ---
+    # Browser origins allowed to call the API. Env format is comma-separated,
+    # e.g. CORS_ORIGINS=http://localhost:5173,https://app.example.com
+    # NoDecode stops pydantic-settings from JSON-decoding the env string, so
+    # the validator below can split it instead.
+    cors_origins: Annotated[list[str], NoDecode] = ["http://localhost:5173"]
 
     # --- App metadata ---
     app_name: str = "Collection Tracker API"
@@ -34,6 +43,20 @@ class Settings(BaseSettings):
         case_sensitive=False,
         extra="ignore",
     )
+
+    @field_validator("cors_origins", mode="before")
+    @classmethod
+    def split_cors_origins(cls, v: object) -> object:
+        """
+        Parse a comma-separated env string into a list of origins.
+
+        Strips whitespace and trailing slashes, because the browser's Origin
+        header never has a trailing slash and CORS matching is exact.
+        Non-string input (the default list) passes through unchanged.
+        """
+        if isinstance(v, str):
+            return [o.strip().rstrip("/") for o in v.split(",") if o.strip()]
+        return v
 
 
 @lru_cache
