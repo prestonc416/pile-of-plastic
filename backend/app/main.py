@@ -4,6 +4,8 @@ from app.api.routes import auth
 from app.core.config import get_settings
 
 from app.api.routes import items
+
+from app.api.routes import auth, collection, items
  
 settings = get_settings()
  
@@ -27,3 +29,5 @@ app.include_router(items.router, prefix="/items", tags=["items"])
 @app.get("/")
 def root():
     return {"message": "Welcome to the Collection Tracker API"}
+
+app.include_router(collection.router, prefix="/collection", tags=["collection"])
