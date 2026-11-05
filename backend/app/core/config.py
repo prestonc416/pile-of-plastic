@@ -58,6 +58,21 @@ class Settings(BaseSettings):
             return [o.strip().rstrip("/") for o in v.split(",") if o.strip()]
         return v
 
+    @field_validator("jwt_secret_key")
+    @classmethod
+    def reject_weak_jwt_secret(cls, v: str) -> str:
+        """
+        Fail fast at startup if the JWT signing key is a placeholder or too
+        short. HS256 needs at least 32 bytes of key material (RFC 7518,
+        section 3.2); token_urlsafe(64) gives ~86 characters.
+        """
+        placeholders = {"changeme", "change-me", "secret", "your-secret-key"}
+        if v.strip().lower() in placeholders or len(v) < 32:
+            raise ValueError(
+                "JWT_SECRET_KEY is a placeholder or shorter than 32 characters. "
+                'Generate one with: python -c "import secrets; print(secrets.token_urlsafe(64))"'
+            )
+        return v
 
 @lru_cache
 def get_settings() -> Settings:
