@@ -7,6 +7,12 @@ frontend/.env
 frontend/.env.local
 
 # ============================
+# Original photos (large, and phone photos can carry GPS location).
+# prepare_images.py writes the stripped, resized copies to frontend/public/items/.
+# ============================
+backend/photos/
+
+# ============================
 # Python (backend)
 # ============================
 venv/

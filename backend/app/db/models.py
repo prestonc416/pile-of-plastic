@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Numeric, String, func
+from sqlalchemy import DateTime, ForeignKey, Numeric, String, Text, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -58,6 +58,10 @@ class Item(Base):
 
     available_at: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
+    # Free-text description written by the catalog maintainer. Text (not
+    # String(n)) because descriptions have no natural length cap.
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+
     # JSONB: Postgres-specific binary JSON storage. For flexible attributes
     # that don't warrant their own column. Queryable/indexable later, unlike
     # plain JSON or a text blob.
@@ -73,6 +77,18 @@ class Item(Base):
     # every UPDATE to this row, you never manually touch it.
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    # Photos of this item, in display order. lazy="selectin" loads the images
+    # for every item in a result with ONE extra query (no N+1), so every
+    # route that returns items, including the nested item in a collection
+    # entry, gets its images without remembering to ask for them.
+    # delete-orphan: removing an image from this list deletes its row.
+    images: Mapped[list["ItemImage"]] = relationship(
+        back_populates="item",
+        order_by="ItemImage.position",
+        cascade="all, delete-orphan",
+        lazy="selectin",
     )
 
     def __repr__(self) -> str:
@@ -167,3 +183,34 @@ class CollectionEntry(Base):
 
     def __repr__(self) -> str:
         return f"<CollectionEntry user_id={self.user_id} item_id={self.item_id}>"
+
+
+class ItemImage(Base):
+    """
+    One photo of a catalog item. The image file itself is NOT stored here,
+    only where to find it: a path relative to the frontend's public folder
+    (e.g. "items/gambit/1.webp"). Keeping it relative means moving the files
+    to object storage later only changes the URL prefix, not this data.
+
+    Rows are written by import_images.py from item_images.csv.
+    """
+
+    __tablename__ = "item_images"
+    # One image per position per item, so display order is unambiguous.
+    __table_args__ = (UniqueConstraint("item_id", "position", name="uq_item_images_item_position"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    item_id: Mapped[int] = mapped_column(
+        ForeignKey("items.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    # 1-based display order; position 1 is the main image.
+    position: Mapped[int] = mapped_column(nullable=False)
+    path: Mapped[str] = mapped_column(String(255), nullable=False)
+    thumb_path: Mapped[str] = mapped_column(String(255), nullable=False)
+    # Required: describes the photo for screen readers and when it fails to load.
+    alt_text: Mapped[str] = mapped_column(String(255), nullable=False)
+
+    item: Mapped["Item"] = relationship(back_populates="images")
+
+    def __repr__(self) -> str:
+        return f"<ItemImage item_id={self.item_id} position={self.position}>"

@@ -15,6 +15,9 @@ alembic>=1.13
 pyjwt>=2.9              # NOT python-jose. jose is unmaintained w/ known CVEs (see notes below).
 pwdlib[argon2]>=0.3      # argon2-cffi is what PasswordHash.recommended() actually needs
  
+# --- Images (prepare_images.py) ---
+pillow>=11.0             # resize + re-encode photos to WebP, strip metadata
+
 # --- Dev / testing ---
 pytest>=8.0
 httpx2>=2.0              # starlette.testclient now prefers this; plain httpx is deprecated (unmaintained upstream)
