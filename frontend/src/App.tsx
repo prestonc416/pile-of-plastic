@@ -1,41 +1,31 @@
-import { useQuery } from '@tanstack/react-query'
-import { itemsQuery } from './queries.ts'
+import { Route, Routes } from 'react-router'
+import Layout from './components/Layout.tsx'
+import RequireAuth from './components/RequireAuth.tsx'
+import AuthPage from './pages/AuthPage.tsx'
+import CatalogPage from './pages/CatalogPage.tsx'
+import CollectionPage from './pages/CollectionPage.tsx'
+import ItemPage from './pages/ItemPage.tsx'
+import NotFoundPage from './pages/NotFoundPage.tsx'
 
-/** Catalog table: loading, error, empty, and success states. */
-function ItemList() {
-  const { data: items, isPending, isError, error } = useQuery(itemsQuery)
-
-  if (isPending) return <p>Loading…</p>
-  if (isError) return <p role="alert">Could not load items: {error.message}</p>
-  if (items.length === 0) return <p>No items in the catalog yet.</p>
-
-  return (
-    <table>
-      <thead>
-        <tr>
-          <th>Figure</th>
-          <th>Line</th>
-          <th>Brand</th>
-        </tr>
-      </thead>
-      <tbody>
-        {items.map((item) => (
-          <tr key={item.slug}>
-            <td>{item.figure}</td>
-            <td>{item.line}</td>
-            <td>{item.brand}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  )
-}
-
+/** Route table. Every page renders inside Layout (header + main area). */
 export default function App() {
   return (
-    <main>
-      <h1>Catalog</h1>
-      <ItemList />
-    </main>
+    <Routes>
+      <Route element={<Layout />}>
+        <Route index element={<CatalogPage />} />
+        <Route path="items/:slug" element={<ItemPage />} />
+        <Route
+          path="collection"
+          element={
+            <RequireAuth>
+              <CollectionPage />
+            </RequireAuth>
+          }
+        />
+        <Route path="login" element={<AuthPage mode="login" />} />
+        <Route path="register" element={<AuthPage mode="register" />} />
+        <Route path="*" element={<NotFoundPage />} />
+      </Route>
+    </Routes>
   )
 }

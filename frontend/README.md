@@ -1,75 +1,75 @@
-# React + TypeScript + Vite
+# pile-of-plastic frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React + TypeScript single-page app (Vite) for the Collection Tracker API in `../backend`.
 
-Currently, two official plugins are available:
+## Run it
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+1. Start the API from `backend/`: `uvicorn app.main:app --reload` (port 8000).
+2. From `frontend/`:
+   ```
+   npm install
+   npm run dev
+   ```
+3. Open http://localhost:5173.
 
-## React Compiler
+The API URL defaults to `http://localhost:8000`. To change it, create
+`frontend/.env.local` with `VITE_API_URL=https://your-api.example.com`.
+The API must list this app's origin in `CORS_ORIGINS`.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Scripts
 
-## Expanding the ESLint configuration
+- `npm run dev`: dev server with hot reload
+- `npm run build`: type-check, then build to `dist/`
+- `npm run lint`: ESLint
+- `npm run preview`: serve the production build locally
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Pages
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+| Route | What it does | Login needed |
+|---|---|---|
+| `/` | Catalog: search, filter by brand, one-click add | No (adding needs login) |
+| `/items/:slug` | One figure, add a copy with price, date, notes | No (adding needs login) |
+| `/collection` | Your copies: total spent, edit, remove | Yes |
+| `/login`, `/register` | Log in or create an account | No |
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Layout
 
 ```
-
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+src/
+  main.tsx        providers (TanStack Query, router), logout cache clearing
+  App.tsx         route table
+  api.ts          typed fetch client, one function per endpoint
+  authStore.ts    in-memory access token
+  queries.ts      TanStack Query definitions and mutations
+  format.ts       money (integer cents) and date helpers
+  types.ts        API response and request shapes
+  components/     Layout, RequireAuth, EntryForm
+  pages/          one file per route
+  index.css       all styles and design tokens
 ```
+
+## Photos
+
+Item photos are your own pictures, served as static files from
+`public/items/<slug>/`. From `backend/`, with the venv active:
+
+1. Put originals in `backend/photos/<slug>/` (JPG, PNG, or WebP; name them
+   `1.jpg`, `2.jpg` to set the order). This folder is gitignored.
+2. `python prepare_images.py`: writes resized WebP files with metadata
+   (including GPS location) removed, and lists them in `item_images.csv`.
+3. Edit the `alt_text` column in `item_images.csv` to describe each photo.
+4. `python import_images.py`: loads `item_images.csv` into the database.
+5. Commit `frontend/public/items/` and `backend/item_images.csv`.
+
+Descriptions come from an optional `Description` column in `items.csv`,
+loaded by `python import_items.py`.
+
+## Decisions
+
+- **Token storage:** the access token is kept in memory only, never in
+  localStorage or a cookie. Refreshing the page logs you out. A refresh-token
+  cookie would fix that and needs backend work.
+- **Money:** prices arrive as decimal strings and are summed in integer cents.
+- **Dates:** the API stores a timestamp; the UI sends a chosen day as noon UTC
+  and reads it back in UTC, so the day never shifts with timezone.
+- **Currency:** displayed as USD.
