@@ -27,14 +27,14 @@ export default function Layout() {
               <>
                 {me.data && <span className="account-email">{me.data.email}</span>}
                 {/* Clearing the token logs out; main.tsx then clears cached user data. */}
-                <button type="button" className="button button-on-blue" onClick={() => setToken(null)}>
+                <button type="button" className="button button-on-header" onClick={() => setToken(null)}>
                   Log out
                 </button>
               </>
             ) : (
               <>
                 <NavLink to="/login">Log in</NavLink>
-                <Link to="/register" className="button button-on-blue">
+                <Link to="/register" className="button button-on-header">
                   Create account
                 </Link>
               </>
