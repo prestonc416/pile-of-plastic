@@ -28,7 +28,7 @@ The API must list this app's origin in `CORS_ORIGINS`.
 
 | Route | What it does | Login needed |
 |---|---|---|
-| `/` | Catalog: search, filter by brand, one-click add | No (adding needs login) |
+| `/` | Catalog: search, pick a brand from clickable boxes, one-click add | No (adding needs login) |
 | `/items/:slug` | One figure: photos, description, add a copy with price, date, notes, and photos | No (adding needs login) |
 | `/collection` | Your copies as cards with total spent; each card's ⋯ menu has Edit and Remove | Yes |
 | `/collection/:entryId` | One copy: photo viewer, add or remove your photos, edit, remove | Yes |
@@ -56,6 +56,7 @@ src/
     PhotoViewer     step through photos: buttons, thumbnails, arrow keys
     EntryPhotos     add a photo / remove a photo on the copy page
     CardMenu        the ⋯ menu on collection cards
+    BrandPicker     brand boxes that filter the catalog
     Thumbnail       small square photo with a placeholder fallback
     Gallery         catalog photo grid on the figure page
   pages/          one file per route

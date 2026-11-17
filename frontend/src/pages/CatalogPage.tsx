@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router'
 import { useAuthToken } from '../authStore.ts'
+import BrandPicker from '../components/BrandPicker.tsx'
+import type { BrandOption } from '../components/BrandPicker.tsx'
 import Thumbnail from '../components/Thumbnail.tsx'
 import { collectionQuery, itemsQuery, useAddEntry } from '../queries.ts'
 import type { Item } from '../types.ts'
@@ -74,9 +76,15 @@ export default function CatalogPage() {
     ownedCounts.set(entry.item.id, (ownedCounts.get(entry.item.id) ?? 0) + 1)
   }
 
-  const brands = [...new Set(items.data.flatMap((item) => (item.brand ? [item.brand] : [])))].sort(
-    (a, b) => a.localeCompare(b),
-  )
+  // Every brand with its figure count, alphabetical. Counts cover the whole
+  // catalog, so they don't change while the user types a search.
+  const brandCounts = new Map<string, number>()
+  for (const item of items.data) {
+    if (item.brand) brandCounts.set(item.brand, (brandCounts.get(item.brand) ?? 0) + 1)
+  }
+  const brands: BrandOption[] = [...brandCounts]
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => a.name.localeCompare(b.name))
   const needle = search.trim().toLowerCase()
   const visible = items.data.filter(
     (item) => (brand === '' || item.brand === brand) && (needle === '' || matchesSearch(item, needle)),
@@ -111,17 +119,7 @@ export default function CatalogPage() {
             onChange={(event) => setSearch(event.target.value)}
           />
         </div>
-        <div className="field">
-          <label htmlFor="catalog-brand">Brand</label>
-          <select id="catalog-brand" value={brand} onChange={(event) => setBrand(event.target.value)}>
-            <option value="">All brands</option>
-            {brands.map((name) => (
-              <option key={name} value={name}>
-                {name}
-              </option>
-            ))}
-          </select>
-        </div>
+        <BrandPicker brands={brands} total={items.data.length} selected={brand} onSelect={setBrand} />
       </div>
 
       {/* Announces the result count to screen readers as the filters change. */}
