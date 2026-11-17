@@ -1,6 +1,7 @@
 # pile-of-plastic frontend
 
-React + TypeScript single-page app (Vite) for the Collection Tracker API in `../backend`.
+React + TypeScript single-page app (Vite) for the Collection Tracker API in
+`../backend`. See the [project README](../README.md) for the full setup.
 
 ## Run it
 
@@ -28,9 +29,9 @@ The API must list this app's origin in `CORS_ORIGINS`.
 | Route | What it does | Login needed |
 |---|---|---|
 | `/` | Catalog: search, filter by brand, one-click add | No (adding needs login) |
-| `/items/:slug` | One figure, add a copy with price, date, notes | No (adding needs login) |
-| `/collection` | Your copies: total spent, edit, remove | Yes |
-| `/collection/:entryId` | One copy, read-only: photo viewer, description, your notes | Yes |
+| `/items/:slug` | One figure: photos, description, add a copy with price, date, notes, and photos | No (adding needs login) |
+| `/collection` | Your copies as cards with total spent; each card's ⋯ menu has Edit and Remove | Yes |
+| `/collection/:entryId` | One copy: photo viewer, add or remove your photos, edit, remove | Yes |
 | `/login`, `/register` | Log in or create an account | No |
 
 ## Layout
@@ -43,8 +44,20 @@ src/
   authStore.ts    in-memory access token
   queries.ts      TanStack Query definitions and mutations
   format.ts       money (integer cents) and date helpers
+  images.ts       catalog image URLs
+  photos.ts       upload rules (types, size, limit) for instant feedback
   types.ts        API response and request shapes
-  components/     Layout, RequireAuth, EntryForm
+  components/
+    Layout          header and page frame
+    RequireAuth     sends logged-out users to /login
+    EntryForm       price, date, notes (and photo picker when adding)
+    PhotoPicker     choose photos with previews before adding a copy
+    FilePreview     preview of a picked file, freed when removed
+    PhotoViewer     step through photos: buttons, thumbnails, arrow keys
+    EntryPhotos     add a photo / remove a photo on the copy page
+    CardMenu        the ⋯ menu on collection cards
+    Thumbnail       small square photo with a placeholder fallback
+    Gallery         catalog photo grid on the figure page
   pages/          one file per route
   index.css       all styles and design tokens
 ```
@@ -68,7 +81,7 @@ loaded by `python import_items.py`.
 ### Users' own photos
 
 Logged-in users can attach up to 2 photos to each copy in their collection,
-when adding it or later from the collection page. The API checks each file
+when adding it or later from the copy page. The API checks each file
 (JPG, PNG, or WebP, up to 10 MB), re-encodes it to WebP with metadata
 removed, and stores it under `backend/uploads/` (gitignored), served at
 `/uploads/`. File names are random, so links can't be guessed, but anyone
