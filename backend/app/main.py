@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.api.routes import auth, collection, items
 from app.core.config import get_settings
@@ -32,6 +33,14 @@ def health_check():
     """Sanity check: confirms the app boots and settings load correctly."""
     return {"status": "ok", "app": settings.app_name}
 
+
+# --- Uploaded photos (local storage) ---
+# Serves backend/uploads/ at /uploads/... so <img> tags can load users'
+# photos. File names are random (see services/photos.py), and directory
+# listing is off, so files can't be browsed or guessed.
+# Remove this mount when storage moves to R2 or another object store.
+settings.upload_dir.mkdir(parents=True, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=settings.upload_dir), name="uploads")
 
 # --- Routers ---
 app.include_router(auth.router, prefix="/auth", tags=["auth"])

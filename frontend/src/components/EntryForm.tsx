@@ -2,6 +2,7 @@ import { useId, useState } from 'react'
 import type { FormEvent } from 'react'
 import { fromDateInput, toCents, toDateInput, todayDateInput } from '../format.ts'
 import type { EntryFields } from '../types.ts'
+import PhotoPicker from './PhotoPicker.tsx'
 
 /** Matches max_length=2000 on `notes` in the backend schema. */
 const NOTES_MAX_LENGTH = 2000
@@ -14,7 +15,10 @@ interface EntryFormProps {
   isPending: boolean
   /** Error from the last save attempt, if any. */
   error: string | null
-  onSubmit: (fields: EntryFields) => void
+  /** Show a photo picker (used when adding a copy). */
+  withPhotos?: boolean
+  /** `photos` is always empty unless `withPhotos` is set. */
+  onSubmit: (fields: EntryFields, photos: File[]) => void
   /** Shows a Cancel button when provided. */
   onCancel?: () => void
 }
@@ -29,6 +33,7 @@ export default function EntryForm({
   pendingLabel,
   isPending,
   error,
+  withPhotos = false,
   onSubmit,
   onCancel,
 }: EntryFormProps) {
@@ -37,6 +42,7 @@ export default function EntryForm({
   const [day, setDay] = useState(initial?.acquired_at ? toDateInput(initial.acquired_at) : '')
   const [notes, setNotes] = useState(initial?.notes ?? '')
   const [priceError, setPriceError] = useState<string | null>(null)
+  const [photos, setPhotos] = useState<File[]>([])
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -47,11 +53,12 @@ export default function EntryForm({
     }
     setPriceError(null)
     const trimmedNotes = notes.trim()
-    onSubmit({
+    const fields: EntryFields = {
       bought_for: trimmedPrice === '' ? null : trimmedPrice,
       acquired_at: day === '' ? null : fromDateInput(day),
       notes: trimmedNotes === '' ? null : trimmedNotes,
-    })
+    }
+    onSubmit(fields, photos)
   }
 
   return (
@@ -98,6 +105,7 @@ export default function EntryForm({
           onChange={(event) => setNotes(event.target.value)}
         />
       </div>
+      {withPhotos && <PhotoPicker files={photos} onChange={setPhotos} disabled={isPending} />}
       {error !== null && (
         <p className="form-error" role="alert">
           {error}

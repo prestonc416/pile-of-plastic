@@ -12,6 +12,9 @@ frontend/.env.local
 # ============================
 backend/photos/
 
+# Photos users upload of their own copies (local storage, not for git).
+backend/uploads/
+
 # ============================
 # Python (backend)
 # ============================

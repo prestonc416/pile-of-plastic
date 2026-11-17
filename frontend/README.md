@@ -64,6 +64,19 @@ Item photos are your own pictures, served as static files from
 Descriptions come from an optional `Description` column in `items.csv`,
 loaded by `python import_items.py`.
 
+### Users' own photos
+
+Logged-in users can attach up to 2 photos to each copy in their collection,
+when adding it or later from the collection page. The API checks each file
+(JPG, PNG, or WebP, up to 10 MB), re-encodes it to WebP with metadata
+removed, and stores it under `backend/uploads/` (gitignored), served at
+`/uploads/`. File names are random, so links can't be guessed, but anyone
+given an exact link can open it.
+
+Before deploying, move uploads to object storage: free hosts such as
+Render's free tier delete local files on every redeploy or restart. Only
+`backend/app/services/storage.py` needs a new storage class.
+
 ## Decisions
 
 - **Token storage:** the access token is kept in memory only, never in

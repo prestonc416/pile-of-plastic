@@ -35,6 +35,15 @@ export interface Item {
   images: ItemImage[]
 }
 
+/** The owner's own photo of one copy (schemas/collection.py EntryPhotoRead). */
+export interface EntryPhoto {
+  id: number
+  /** Full-size photo, up to 1600px on the long edge. Absolute URL. */
+  url: string
+  /** 200px square crop for lists. Absolute URL. */
+  thumb_url: string
+}
+
 /** One owned copy of an item (schemas/collection.py CollectionEntryRead). */
 export interface CollectionEntry {
   id: number
@@ -44,6 +53,8 @@ export interface CollectionEntry {
   acquired_at: string | null
   notes: string | null
   created_at: string
+  /** Oldest first. At most MAX_PHOTOS_PER_ENTRY (photos.ts). */
+  photos: EntryPhoto[]
 }
 
 /** The per-entry fields a user can edit. null clears the field on the server. */

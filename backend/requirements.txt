@@ -1,6 +1,7 @@
 # --- Web framework ---
 fastapi>=0.115
 uvicorn[standard]>=0.30
+python-multipart>=0.0.20  # FastAPI needs this to receive file uploads (UploadFile)
  
 # --- Settings / env ---
 pydantic[email]>=2.8    # [email] extra installs email-validator, needed for EmailStr

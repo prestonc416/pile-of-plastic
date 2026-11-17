@@ -57,6 +57,8 @@ interface RequestOptions {
   method?: 'GET' | 'POST' | 'PATCH' | 'DELETE'
   /** Sent as JSON when provided. */
   body?: unknown
+  /** Sent as multipart form data (file uploads). Use instead of `body`. */
+  form?: FormData
   /** Lets the caller (TanStack Query) cancel the request. */
   signal?: AbortSignal
 }
@@ -70,10 +72,12 @@ interface RequestOptions {
  *         the original AbortError if `signal` was aborted.
  */
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const { method = 'GET', body, signal } = options
+  const { method = 'GET', body, form, signal } = options
   const headers = new Headers()
   const token = getToken()
   if (token !== null) headers.set('Authorization', `Bearer ${token}`)
+  // For FormData, the browser sets Content-Type itself, including the
+  // multipart boundary, so it must not be set here.
   if (body !== undefined) headers.set('Content-Type', 'application/json')
 
   let res: Response
@@ -81,7 +85,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     res = await fetch(`${API_URL}${path}`, {
       method,
       headers,
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body: form ?? (body === undefined ? undefined : JSON.stringify(body)),
       signal,
     })
   } catch (err) {
@@ -153,4 +157,20 @@ export function updateEntry(id: number, fields: Partial<EntryFields>): Promise<C
 /** Remove an entry from the current user's collection. */
 export function deleteEntry(id: number): Promise<void> {
   return request<void>(`/collection/${id}`, { method: 'DELETE' })
+}
+
+/**
+ * Attach a photo of the user's own copy. The server re-checks everything
+ * (type, size, limit), so client checks in photos.ts are only for fast feedback.
+ * @returns the updated entry, photos included.
+ */
+export function uploadEntryPhoto(entryId: number, file: File): Promise<CollectionEntry> {
+  const form = new FormData()
+  form.append('file', file)
+  return request<CollectionEntry>(`/collection/${entryId}/photos`, { method: 'POST', form })
+}
+
+/** Remove one photo from one of the user's entries. */
+export function deleteEntryPhoto(entryId: number, photoId: number): Promise<void> {
+  return request<void>(`/collection/${entryId}/photos/${photoId}`, { method: 'DELETE' })
 }

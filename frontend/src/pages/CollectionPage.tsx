@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router'
 import EntryForm from '../components/EntryForm.tsx'
+import EntryPhotos from '../components/EntryPhotos.tsx'
 import Thumbnail from '../components/Thumbnail.tsx'
 import { formatCents, formatDay, formatMoney, toCents } from '../format.ts'
 import { collectionQuery, useDeleteEntry, useUpdateEntry } from '../queries.ts'
@@ -21,7 +22,7 @@ function EntryCard({ entry }: { entry: CollectionEntry }) {
   return (
     <li className="entry">
       <div className="entry-head">
-        <Thumbnail item={entry.item} />
+        <Thumbnail item={entry.item} ownPhoto={entry.photos[0]} />
         <div className="entry-title">
           <Link to={`/items/${entry.item.slug}`} className="row-name">
             {name}
@@ -58,6 +59,7 @@ function EntryCard({ entry }: { entry: CollectionEntry }) {
             {entry.acquired_at ? `Got it ${formatDay(entry.acquired_at)}` : 'No date recorded'}
           </p>
           {entry.notes && <p className="entry-notes">{entry.notes}</p>}
+          <EntryPhotos entry={entry} name={name} />
 
           {mode === 'view' ? (
             <div className="form-actions">

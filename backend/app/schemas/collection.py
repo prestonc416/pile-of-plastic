@@ -1,9 +1,10 @@
 from datetime import datetime
 from decimal import Decimal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, computed_field
 
 from app.schemas.item import ItemRead
+from app.services.storage import get_storage
 
 
 class CollectionEntryCreate(BaseModel):
@@ -28,6 +29,31 @@ class CollectionEntryUpdate(BaseModel):
     notes: str | None = Field(default=None, max_length=2000)
 
 
+class EntryPhotoRead(BaseModel):
+    """
+    One of the owner's photos of an entry. Storage keys are read from the
+    database but not sent; the client gets ready-to-use URLs instead.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    key: str = Field(exclude=True)
+    thumb_key: str = Field(exclude=True)
+
+    @computed_field
+    @property
+    def url(self) -> str:
+        """Full-size photo, up to 1600px on the long edge."""
+        return get_storage().url(self.key)
+
+    @computed_field
+    @property
+    def thumb_url(self) -> str:
+        """200px square crop for lists."""
+        return get_storage().url(self.thumb_key)
+
+
 class CollectionEntryRead(BaseModel):
     """What the API returns: the entry plus the full catalog item nested inside."""
 
@@ -39,3 +65,5 @@ class CollectionEntryRead(BaseModel):
     acquired_at: datetime | None
     notes: str | None
     created_at: datetime
+    # Oldest first; at most MAX_PHOTOS_PER_ENTRY (services/photos.py).
+    photos: list[EntryPhotoRead] = []

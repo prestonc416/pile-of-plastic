@@ -181,6 +181,18 @@ class CollectionEntry(Base):
     user: Mapped["User"] = relationship(back_populates="collection_entries")
     item: Mapped["Item"] = relationship()
 
+    # The owner's own photos of this copy, oldest first. lazy="selectin"
+    # loads them for every entry in a result with one extra query (no N+1).
+    # delete-orphan: deleting the entry, or removing a photo from this list,
+    # deletes the photo rows. The image FILES are removed by the routes,
+    # after the database change commits.
+    photos: Mapped[list["EntryPhoto"]] = relationship(
+        back_populates="entry",
+        order_by="EntryPhoto.id",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
+
     def __repr__(self) -> str:
         return f"<CollectionEntry user_id={self.user_id} item_id={self.item_id}>"
 
@@ -214,3 +226,29 @@ class ItemImage(Base):
 
     def __repr__(self) -> str:
         return f"<ItemImage item_id={self.item_id} position={self.position}>"
+
+
+class EntryPhoto(Base):
+    """
+    A user's own photo of one copy in their collection. Only storage keys are
+    kept here (e.g. "entries/<random>.webp"); the files live in storage
+    (see services/storage.py), and the API turns keys into URLs.
+    """
+
+    __tablename__ = "entry_photos"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    entry_id: Mapped[int] = mapped_column(
+        ForeignKey("collection_entries.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    # Random and unique, so one row can never point at another row's file.
+    key: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+    thumb_key: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    entry: Mapped["CollectionEntry"] = relationship(back_populates="photos")
+
+    def __repr__(self) -> str:
+        return f"<EntryPhoto entry_id={self.entry_id} key={self.key}>"

@@ -8,6 +8,7 @@ instead of silently breaking a request later.
 """
 
 from functools import lru_cache
+from pathlib import Path
 from typing import Annotated
 
 from pydantic import field_validator
@@ -30,6 +31,14 @@ class Settings(BaseSettings):
     # NoDecode stops pydantic-settings from JSON-decoding the env string, so
     # the validator below can split it instead.
     cors_origins: Annotated[list[str], NoDecode] = ["http://localhost:5173"]
+
+    # --- Uploaded photos ---
+    # Folder for uploaded files when using local storage. Defaults to
+    # backend/uploads/ (gitignored), whichever folder the server starts in.
+    upload_dir: Path = Path(__file__).resolve().parents[2] / "uploads"
+    # Public URL prefix that serves upload_dir (the /uploads mount in main.py).
+    # Change it when the API runs somewhere other than localhost:8000.
+    media_base_url: str = "http://localhost:8000/uploads"
 
     # --- App metadata ---
     app_name: str = "Collection Tracker API"

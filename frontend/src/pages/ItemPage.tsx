@@ -6,13 +6,14 @@ import { useAuthToken } from '../authStore.ts'
 import EntryForm from '../components/EntryForm.tsx'
 import Gallery from '../components/Gallery.tsx'
 import { formatDay, formatMoney } from '../format.ts'
-import { collectionQuery, itemQuery, useAddEntry } from '../queries.ts'
+import Thumbnail from '../components/Thumbnail.tsx'
+import { collectionQuery, itemQuery, useAddEntryWithPhotos } from '../queries.ts'
 import type { Item } from '../types.ts'
 
 /** Add form plus the copies of this item the user already owns. */
 function OwnedCopies({ item }: { item: Item }) {
   const collection = useQuery(collectionQuery)
-  const addEntry = useAddEntry()
+  const addEntry = useAddEntryWithPhotos()
   // Bumped after each successful add; changing the form's key resets its inputs.
   const [addedCount, setAddedCount] = useState(0)
 
@@ -28,17 +29,33 @@ function OwnedCopies({ item }: { item: Item }) {
           pendingLabel="Adding…"
           isPending={addEntry.isPending}
           error={addEntry.isError ? addEntry.error.message : null}
-          onSubmit={(fields) =>
+          withPhotos
+          onSubmit={(fields, photos) =>
             addEntry.mutate(
-              { item_id: item.id, ...fields },
+              { entry: { item_id: item.id, ...fields }, photos },
               { onSuccess: () => setAddedCount((count) => count + 1) },
             )
           }
         />
-        {addedCount > 0 && !addEntry.isPending && !addEntry.isError && (
+        {addEntry.isSuccess && addEntry.data.failed.length === 0 && (
           <p className="form-success" role="status">
             Added to your collection.
           </p>
+        )}
+        {addEntry.isSuccess && addEntry.data.failed.length > 0 && (
+          <div className="form-error" role="alert">
+            <p>Added to your collection, but {addEntry.data.failed.length === 1 ? 'a photo' : 'some photos'} didn't upload:</p>
+            <ul>
+              {addEntry.data.failed.map((failure, index) => (
+                <li key={`${index}-${failure.fileName}`}>
+                  {failure.fileName}: {failure.message}
+                </li>
+              ))}
+            </ul>
+            <p>
+              You can add photos from <Link to="/collection">your collection</Link>.
+            </p>
+          </div>
         )}
       </section>
 
@@ -58,6 +75,7 @@ function OwnedCopies({ item }: { item: Item }) {
             <ul className="rows">
               {copies.map((entry) => (
                 <li key={entry.id} className="row">
+                  {entry.photos[0] !== undefined && <Thumbnail item={item} ownPhoto={entry.photos[0]} />}
                   <div className="row-main">
                     <span>{entry.acquired_at ? `Got it ${formatDay(entry.acquired_at)}` : 'No date recorded'}</span>
                     {entry.notes && <span className="row-meta">{entry.notes}</span>}
