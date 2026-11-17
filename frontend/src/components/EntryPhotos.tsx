@@ -4,14 +4,23 @@ import { checkPhotoFile, MAX_PHOTOS_PER_ENTRY, PHOTO_ACCEPT } from '../photos.ts
 import { useDeleteEntryPhoto, useUploadEntryPhoto } from '../queries.ts'
 import type { CollectionEntry } from '../types.ts'
 
-/** The owner's photos of one copy, with add and a two-step remove. */
-export default function EntryPhotos({ entry, name }: { entry: CollectionEntry; name: string }) {
+/**
+ * Controls for the user's own photos of one copy, used on the copy page
+ * (EntryPage) next to the photo viewer.
+ */
+
+/**
+ * "Add photo" button. Hidden once the copy has the maximum number of photos.
+ * Checks the file before uploading, so a HEIC or oversized file gets an
+ * instant message instead of a failed upload.
+ */
+export function AddEntryPhoto({ entry, name }: { entry: CollectionEntry; name: string }) {
   const upload = useUploadEntryPhoto()
-  const remove = useDeleteEntryPhoto()
   const [pickError, setPickError] = useState<string | null>(null)
-  const [confirmingId, setConfirmingId] = useState<number | null>(null)
-  const busy = upload.isPending || remove.isPending
-  const canAdd = entry.photos.length < MAX_PHOTOS_PER_ENTRY
+
+  if (entry.photos.length >= MAX_PHOTOS_PER_ENTRY) {
+    return <p className="field-hint">You have {MAX_PHOTOS_PER_ENTRY} photos of this copy, the most allowed.</p>
+  }
 
   function handlePick(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
@@ -19,91 +28,80 @@ export default function EntryPhotos({ entry, name }: { entry: CollectionEntry; n
     if (file === undefined) return
     const problem = checkPhotoFile(file)
     setPickError(problem)
-    remove.reset()
     if (problem === null) upload.mutate({ entryId: entry.id, file })
   }
 
-  const error =
-    pickError ??
-    (upload.isError ? `Photo not added. ${upload.error.message}` : null) ??
-    (remove.isError ? `Photo not removed. ${remove.error.message}` : null)
+  const error = pickError ?? (upload.isError ? `Photo not added. ${upload.error.message}` : null)
 
   return (
-    <div className="entry-photos">
-      {entry.photos.length > 0 && <span className="field-label">Your photos</span>}
-      {entry.photos.length > 0 && (
-        <ul className="photo-strip" aria-label={`Your photos of ${name}`}>
-          {entry.photos.map((photo, index) => (
-            <li key={photo.id} className="photo-tile">
-              <a href={photo.url} target="_blank" rel="noopener noreferrer">
-                <img
-                  className="photo-tile-img"
-                  src={photo.thumb_url}
-                  alt={`Your photo ${index + 1} of ${name}`}
-                  width={200}
-                  height={200}
-                  loading="lazy"
-                  decoding="async"
-                />
-              </a>
-              {confirmingId === photo.id ? (
-                <div className="photo-confirm" role="group" aria-label="Remove this photo?">
-                  <button
-                    type="button"
-                    className="button button-small button-danger-solid"
-                    disabled={busy}
-                    onClick={() =>
-                      remove.mutate(
-                        { entryId: entry.id, photoId: photo.id },
-                        { onSuccess: () => setConfirmingId(null) },
-                      )
-                    }
-                  >
-                    {remove.isPending ? 'Removing…' : 'Remove'}
-                  </button>
-                  <button
-                    type="button"
-                    className="button button-small"
-                    disabled={busy}
-                    onClick={() => setConfirmingId(null)}
-                  >
-                    Keep
-                  </button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  className="button button-small"
-                  disabled={busy}
-                  aria-label={`Remove your photo ${index + 1} of ${name}`}
-                  onClick={() => {
-                    remove.reset()
-                    setConfirmingId(photo.id)
-                  }}
-                >
-                  Remove
-                </button>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
-      {canAdd && (
-        <label className={busy ? 'button file-button is-disabled' : 'button file-button'}>
-          {upload.isPending ? 'Uploading…' : 'Add photo'}
-          <input
-            type="file"
-            className="visually-hidden"
-            accept={PHOTO_ACCEPT}
-            disabled={busy}
-            aria-label={`Add a photo of your ${name}`}
-            onChange={handlePick}
-          />
-        </label>
-      )}
+    <div className="photo-add">
+      <label className={upload.isPending ? 'button file-button is-disabled' : 'button file-button'}>
+        {upload.isPending ? 'Uploading…' : 'Add a photo of your copy'}
+        <input
+          type="file"
+          className="visually-hidden"
+          accept={PHOTO_ACCEPT}
+          disabled={upload.isPending}
+          aria-label={`Add a photo of your ${name}`}
+          aria-describedby="add-photo-hint"
+          onChange={handlePick}
+        />
+      </label>
+      <p className="field-hint" id="add-photo-hint">
+        Up to {MAX_PHOTOS_PER_ENTRY} JPG, PNG, or WebP photos, 10 MB each. Only you see these.
+      </p>
       {error !== null && (
         <p className="field-error" role="alert">
           {error}
+        </p>
+      )}
+    </div>
+  )
+}
+
+/**
+ * Two-step remove for one of the user's photos: "Remove this photo", then
+ * confirm. Give it `key={photoId}` so the confirm step resets when the
+ * viewer moves to another photo.
+ */
+export function RemoveEntryPhoto({ entryId, photoId }: { entryId: number; photoId: number }) {
+  const remove = useDeleteEntryPhoto()
+  const [confirming, setConfirming] = useState(false)
+
+  if (!confirming) {
+    return (
+      <button type="button" className="button button-small" onClick={() => setConfirming(true)}>
+        Remove this photo
+      </button>
+    )
+  }
+  return (
+    <div className="photo-confirm" role="group" aria-label="Remove this photo?">
+      <span>Remove this photo?</span>
+      <button
+        type="button"
+        className="button button-small button-danger-solid"
+        disabled={remove.isPending}
+        // The button that had focus just disappeared, so move focus here.
+        autoFocus
+        onClick={() => remove.mutate({ entryId, photoId })}
+      >
+        {remove.isPending ? 'Removing…' : 'Remove'}
+      </button>
+      <button
+        type="button"
+        className="button button-small"
+        disabled={remove.isPending}
+        onClick={() => {
+          remove.reset()
+          setConfirming(false)
+        }}
+      >
+        Keep
+      </button>
+      {remove.isError && (
+        <p className="field-error" role="alert">
+          Photo not removed. {remove.error.message}
         </p>
       )}
     </div>

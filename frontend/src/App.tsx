@@ -4,6 +4,7 @@ import RequireAuth from './components/RequireAuth.tsx'
 import AuthPage from './pages/AuthPage.tsx'
 import CatalogPage from './pages/CatalogPage.tsx'
 import CollectionPage from './pages/CollectionPage.tsx'
+import EntryPage from './pages/EntryPage.tsx'
 import ItemPage from './pages/ItemPage.tsx'
 import NotFoundPage from './pages/NotFoundPage.tsx'
 
@@ -19,6 +20,14 @@ export default function App() {
           element={
             <RequireAuth>
               <CollectionPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="collection/:entryId"
+          element={
+            <RequireAuth>
+              <EntryPage />
             </RequireAuth>
           }
         />

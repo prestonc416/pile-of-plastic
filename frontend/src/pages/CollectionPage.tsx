@@ -1,112 +1,86 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Link } from 'react-router'
-import EntryForm from '../components/EntryForm.tsx'
-import EntryPhotos from '../components/EntryPhotos.tsx'
+import { Link, useNavigate } from 'react-router'
+import CardMenu from '../components/CardMenu.tsx'
 import Thumbnail from '../components/Thumbnail.tsx'
 import { formatCents, formatDay, formatMoney, toCents } from '../format.ts'
-import { collectionQuery, useDeleteEntry, useUpdateEntry } from '../queries.ts'
+import { collectionQuery, useDeleteEntry } from '../queries.ts'
 import type { CollectionEntry } from '../types.ts'
 
-/** What an entry card is currently showing. */
-type CardMode = 'view' | 'edit' | 'confirm-remove'
-
-/** One owned figure: details, with inline edit and a two-step remove. */
+/**
+ * One owned figure as a compact card: photo, name, price, and date.
+ * The three-dot menu offers Edit (opens the copy page with the editor open)
+ * and Remove (asks to confirm here on the card).
+ */
 function EntryCard({ entry }: { entry: CollectionEntry }) {
-  const [mode, setMode] = useState<CardMode>('view')
-  const updateEntry = useUpdateEntry()
+  const navigate = useNavigate()
+  const [confirmingRemove, setConfirmingRemove] = useState(false)
   const deleteEntry = useDeleteEntry()
   const price = entry.bought_for !== null ? formatMoney(entry.bought_for) : null
   const name = entry.item.figure.trim()
+  const copyUrl = `/collection/${entry.id}`
 
   return (
     <li className="entry">
       <div className="entry-head">
         <Thumbnail item={entry.item} ownPhoto={entry.photos[0]} />
         <div className="entry-title">
-          <Link to={`/items/${entry.item.slug}`} className="row-name">
+          <Link to={copyUrl} className="row-name">
             {name}
           </Link>
           <span className="row-meta">
             {[entry.item.line, entry.item.brand].filter((part) => part !== null).join(', ')}
           </span>
+          <span className="row-meta">
+            {entry.acquired_at ? `Got it ${formatDay(entry.acquired_at)}` : 'No date recorded'}
+          </span>
         </div>
         {price !== null ? (
           <span className="sticker">{price}</span>
         ) : (
-          <span className="muted">No price recorded</span>
+          <span className="muted entry-no-price">No price recorded</span>
         )}
+        <CardMenu
+          label={`More actions for ${name}`}
+          items={[
+            { label: 'Edit', onSelect: () => void navigate(copyUrl, { state: { edit: true } }) },
+            { label: 'Remove', danger: true, onSelect: () => setConfirmingRemove(true) },
+          ]}
+        />
       </div>
 
-      {mode === 'edit' ? (
-        <EntryForm
-          initial={entry}
-          submitLabel="Save changes"
-          pendingLabel="Saving…"
-          isPending={updateEntry.isPending}
-          error={updateEntry.isError ? updateEntry.error.message : null}
-          onSubmit={(fields) =>
-            updateEntry.mutate({ id: entry.id, fields }, { onSuccess: () => setMode('view') })
-          }
-          onCancel={() => {
-            updateEntry.reset()
-            setMode('view')
-          }}
-        />
-      ) : (
-        <>
-          <p className="entry-detail">
-            {entry.acquired_at ? `Got it ${formatDay(entry.acquired_at)}` : 'No date recorded'}
-          </p>
-          {entry.notes && <p className="entry-notes">{entry.notes}</p>}
-          <EntryPhotos entry={entry} name={name} />
-
-          {mode === 'view' ? (
-            <div className="form-actions">
-              <button type="button" className="button" aria-label={`Edit ${name}`} onClick={() => setMode('edit')}>
-                Edit
-              </button>
-              <button
-                type="button"
-                className="button button-danger"
-                aria-label={`Remove ${name}`}
-                onClick={() => setMode('confirm-remove')}
-              >
-                Remove
-              </button>
-            </div>
-          ) : (
-            <div className="confirm" role="group" aria-label={`Remove ${name}?`}>
-              <p>Remove this copy from your collection? This cannot be undone.</p>
-              {deleteEntry.isError && (
-                <p className="form-error" role="alert">
-                  Not removed. {deleteEntry.error.message}
-                </p>
-              )}
-              <div className="form-actions">
-                <button
-                  type="button"
-                  className="button button-danger-solid"
-                  disabled={deleteEntry.isPending}
-                  onClick={() => deleteEntry.mutate(entry.id)}
-                >
-                  {deleteEntry.isPending ? 'Removing…' : 'Remove'}
-                </button>
-                <button
-                  type="button"
-                  className="button"
-                  disabled={deleteEntry.isPending}
-                  onClick={() => {
-                    deleteEntry.reset()
-                    setMode('view')
-                  }}
-                >
-                  Keep it
-                </button>
-              </div>
-            </div>
+      {confirmingRemove && (
+        <div className="confirm" role="group" aria-label={`Remove ${name}?`}>
+          <p>Remove this copy from your collection? Its photos are deleted too. This cannot be undone.</p>
+          {deleteEntry.isError && (
+            <p className="form-error" role="alert">
+              Not removed. {deleteEntry.error.message}
+            </p>
           )}
-        </>
+          <div className="form-actions">
+            <button
+              type="button"
+              className="button button-danger-solid"
+              disabled={deleteEntry.isPending}
+              // The menu that opened this just closed, so move focus here.
+              autoFocus
+              onClick={() => deleteEntry.mutate(entry.id)}
+            >
+              {deleteEntry.isPending ? 'Removing…' : 'Remove'}
+            </button>
+            <button
+              type="button"
+              className="button"
+              disabled={deleteEntry.isPending}
+              onClick={() => {
+                deleteEntry.reset()
+                setConfirmingRemove(false)
+              }}
+            >
+              Keep it
+            </button>
+          </div>
+        </div>
       )}
     </li>
   )

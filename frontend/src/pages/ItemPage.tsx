@@ -84,6 +84,9 @@ function OwnedCopies({ item }: { item: Item }) {
                     {entry.bought_for !== null && (
                       <span className="sticker sticker-small">{formatMoney(entry.bought_for)}</span>
                     )}
+                    <Link to={`/collection/${entry.id}`} className="button button-small">
+                      View copy
+                    </Link>
                   </div>
                 </li>
               ))}

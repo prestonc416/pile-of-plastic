@@ -30,6 +30,7 @@ The API must list this app's origin in `CORS_ORIGINS`.
 | `/` | Catalog: search, filter by brand, one-click add | No (adding needs login) |
 | `/items/:slug` | One figure, add a copy with price, date, notes | No (adding needs login) |
 | `/collection` | Your copies: total spent, edit, remove | Yes |
+| `/collection/:entryId` | One copy, read-only: photo viewer, description, your notes | Yes |
 | `/login`, `/register` | Log in or create an account | No |
 
 ## Layout

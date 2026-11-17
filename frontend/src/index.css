@@ -540,6 +540,13 @@ a:hover {
   flex-wrap: wrap;
   align-items: flex-start;
   gap: 0.5rem 1rem;
+  /* Room on the right for the three-dot menu in the corner. */
+  padding-right: 2.25rem;
+  position: relative;
+}
+
+.entry-no-price {
+  font-size: 0.875rem;
 }
 
 .entry-title .row-name {
@@ -687,11 +694,6 @@ a:hover {
   justify-items: start;
 }
 
-.photo-tile a {
-  display: block;
-  border-radius: var(--radius);
-}
-
 .photo-tile-img {
   display: block;
   width: 6rem;
@@ -704,18 +706,214 @@ a:hover {
 
 .photo-confirm {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 0.375rem;
 }
 
-.entry-photos {
+.photo-add {
   display: grid;
-  gap: 0.5rem;
-  /* Separate photo controls from the Edit / Remove buttons for the copy. */
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid var(--rule);
+  gap: 0.375rem;
+  justify-items: start;
 }
 
 .form-error ul {
   margin: 0.25rem 0;
   padding-left: 1.25rem;
+}
+
+/* ---------- Photo viewer (your copy) ---------- */
+
+.viewer {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.viewer-stage {
+  margin: 0;
+  display: grid;
+  gap: 0.375rem;
+}
+
+.viewer-stage a {
+  display: block;
+  border-radius: var(--radius);
+}
+
+/* Fixed frame: portrait and landscape photos show whole, and the page
+   doesn't jump as you step between them. */
+.viewer-stage img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  max-height: 70svh;
+  object-fit: contain;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+}
+
+.viewer-stage figcaption {
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+.viewer-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.viewer-thumbs {
+  list-style: none;
+  margin: 0;
+  padding: 0.25rem;
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  flex: 1;
+  min-width: 0;
+}
+
+.viewer-thumb {
+  display: block;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: var(--radius);
+  background: none;
+  cursor: pointer;
+}
+
+.viewer-thumb img {
+  display: block;
+  width: 3.5rem;
+  height: 3.5rem;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.viewer-thumb[aria-current='true'] {
+  border-color: var(--blue);
+}
+
+.viewer-empty {
+  margin-bottom: 1.5rem;
+}
+
+.entry-section {
+  margin-bottom: 1.5rem;
+}
+
+.entry-section h2 {
+  margin-bottom: 0.5rem;
+}
+
+@media (max-width: 34rem) {
+  /* Thumbnails get their own full-width row; buttons sit side by side below. */
+  .viewer-controls {
+    flex-wrap: wrap;
+  }
+
+  .viewer-thumbs {
+    order: -1;
+    flex-basis: 100%;
+  }
+}
+
+.edit-button {
+  margin-top: 1rem;
+}
+
+.edit-panel {
+  margin: 1.25rem 0 0;
+}
+
+/* Focus moves here when editing opens; a heading needs no focus ring. */
+.edit-panel h2:focus {
+  outline: none;
+}
+
+/* ---------- Card menu (three dots) ---------- */
+
+.card-menu {
+  position: absolute;
+  top: -0.375rem;
+  right: -0.5rem;
+}
+
+.card-menu-button {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.card-menu-button svg {
+  fill: currentColor;
+}
+
+.card-menu-button:hover,
+.card-menu-button[aria-expanded='true'] {
+  background: var(--shelf);
+  color: var(--ink);
+}
+
+.card-menu-list {
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  right: 0;
+  z-index: 10;
+  min-width: 9rem;
+  margin: 0;
+  padding: 0.25rem;
+  list-style: none;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  box-shadow: 0 6px 20px rgb(27 35 51 / 0.14);
+}
+
+.card-menu-item {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.card-menu-item:hover,
+.card-menu-item:focus-visible {
+  background: var(--shelf);
+}
+
+.card-menu-item-danger {
+  color: var(--red);
+}
+
+.card-menu-item-danger:hover,
+.card-menu-item-danger:focus-visible {
+  background: #fbeaec;
+}
+
+/* ---------- Copy page extras ---------- */
+
+.viewer-actions:empty {
+  display: none;
+}
+
+.remove-section {
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--rule);
 }
